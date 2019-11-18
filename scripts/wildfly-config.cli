@@ -1,0 +1,30 @@
+embed-server --std-out=echo --server-config=standalone-full.xml
+
+batch
+
+module add \
+    --name=org.postgresql \
+    --resources=/tmp/postgresql-42.2.8.jar \
+    --dependencies=javax.api,javax.transaction.api
+
+/subsystem=datasources/jdbc-driver=PostgreSQLDriver:add(driver-name="PostgreSQLDriver",driver-module-name="org.postgresql",driver-class-name=org.postgresql.Driver)
+
+data-source add \
+    --jndi-name=${env.JNDI_NAME} \
+    --name=${env.DS_NAME} \
+    --connection-url=jdbc:postgresql://${env.DB_HOST}:${env.DB_PORT}/${env.DB_NAME} \
+    --driver-name=PostgreSQLDriver \
+    --driver-class=org.postgresql.Driver \
+    --user-name=${env.DB_USER} \
+    --password=${env.DB_PASS} \
+    --check-valid-connection-sql="SELECT 1" \
+    --background-validation=true \
+    --background-validation-millis=60000 \
+    --flush-strategy=IdleConnections \
+    --min-pool-size=10 \
+    --max-pool-size=100 \
+    --pool-prefill=false
+
+jms-queue add --queue-address=dm110queue --durable=true --entries=["java:/jms/queue/dm110queue"]
+
+run-batch

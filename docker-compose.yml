@@ -1,0 +1,46 @@
+version: "3.5"
+
+volumes:
+  dados:
+
+networks:
+  web:
+
+services:
+  postgres:
+    image: postgres
+    container_name: "dm110-postgres"
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+    volumes:
+      - dados:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - web
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: "dm110-pgadmin"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@dm110.com"
+      PGADMIN_DEFAULT_PASSWORD: "docker"
+    ports:
+      - "8000:80"
+    networks:
+      - web
+    depends_on:
+      - postgres
+
+  wildfly:
+    build: .
+    container_name: "dm110-wildfly"
+    ports:
+      - "8080:8080"
+      - "9990:9990"
+    networks:
+      - web
+    depends_on:
+      - postgres
